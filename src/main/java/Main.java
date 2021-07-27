@@ -12,5 +12,6 @@ public class Main {
         String bodyB = nbpApi.callApiB();
         List<CurrencyExchangeRateList> currencyExchangeRateTableB = nbpApi.getCurrencyExchangeRateTable(bodyB);
         System.out.println(currencyExchangeRateTableB);
+
     }
 }
