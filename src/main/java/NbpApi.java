@@ -7,14 +7,12 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class NbpApi {
 
     private final static String table_a = "https://api.nbp.pl/api/exchangerates/tables/a?format=json";
     private final static String table_b = "https://api.nbp.pl/api/exchangerates/tables/b?format=json";
-    private HttpResponse<String> response;
 
     private String callApi(String link) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
@@ -22,7 +20,7 @@ public class NbpApi {
                 .uri(URI.create(link))
                 .GET()
                 .build();
-        response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
     }
 

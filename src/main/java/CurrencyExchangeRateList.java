@@ -8,5 +8,6 @@ public class CurrencyExchangeRateList {
     private char table;
     private String no;
     private String effectiveDate;
-    private List<Rate> rates;
+    private List<CurrencyExchangeRate> rates;
+
 }
