@@ -7,7 +7,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -26,18 +25,29 @@ public class NbpApi {
         return response.body();
     }
 
-    public String callApiA() throws IOException, InterruptedException {
-        return callApi(table_a);
+    public String callApiA() {
+        try {
+            return callApi(table_a);
+        } catch (Exception e) {
+            throw new NbpApiException("Calling NBP API table A failed", e.getCause());
+        }
     }
 
-    public String callApiB() throws IOException, InterruptedException {
-        return callApi(table_b);
+    public String callApiB() {
+        try {
+            return callApi(table_b);
+        } catch (Exception e) {
+            throw new NbpApiException("Calling NBP API table B failed", e.getCause());
+        }
     }
 
-    public List<CurrencyExchangeRateList> getCurrencyExchangeRateTable(String jsonFile)
-            throws JsonProcessingException {
+    public List<CurrencyExchangeRateList> getCurrencyExchangeRateTable(String jsonFile) {
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(jsonFile, new TypeReference<List<CurrencyExchangeRateList>>(){});
+        try {
+            return mapper.readValue(jsonFile, new TypeReference<List<CurrencyExchangeRateList>>(){});
+        } catch (Exception e) {
+            throw new NbpApiException("Processing JSON file failed", e.getCause());
+        }
     }
 
 

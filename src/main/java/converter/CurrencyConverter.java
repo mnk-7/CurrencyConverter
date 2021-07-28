@@ -4,8 +4,8 @@ import db.Currency;
 import db.CurrencyRepository;
 import nbp.CurrencyExchangeRate;
 import nbp.NbpApi;
+import nbp.NbpApiException;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Optional;
@@ -13,25 +13,25 @@ import java.util.Optional;
 public class CurrencyConverter {
 
     private final CurrencyRepository currencyRepository;
-    private final NbpApi nbpBase;
+    private final NbpApi nbpRepository;
 
-    public CurrencyConverter(CurrencyRepository currencyRepository, NbpApi nbpBase) {
+    public CurrencyConverter(CurrencyRepository currencyRepository, NbpApi nbpRepository) {
         this.currencyRepository = currencyRepository;
-        this.nbpBase = nbpBase;
+        this.nbpRepository = nbpRepository;
     }
 
-    public BigDecimal convertToPln(String codeOfCurrencyToConvert, BigDecimal amountToConvert) throws IOException, InterruptedException {
+    public BigDecimal convertToPln(String codeOfCurrencyToConvert, BigDecimal amountToConvert) {
         Currency currencyToConvert = findCurrency(codeOfCurrencyToConvert);
         return currencyToConvert.getAvgRate().multiply(amountToConvert);
     }
 
-    public BigDecimal convertFromPln(String codeOfCurrencyToConvert, BigDecimal amountToConvert) throws IOException, InterruptedException {
+    public BigDecimal convertFromPln(String codeOfCurrencyToConvert, BigDecimal amountToConvert) {
         Currency currencyToConvert = findCurrency(codeOfCurrencyToConvert);
         return amountToConvert.divide(currencyToConvert.getAvgRate(), 2, RoundingMode.HALF_UP);
     }
 
 
-    private Currency findCurrency(String codeOfCurrency) throws IOException, InterruptedException {
+    private Currency findCurrency(String codeOfCurrency) {
         Optional<Currency> currencyInDatabase = findCurrencyInDatabase(codeOfCurrency);
         if (currencyInDatabase.isPresent()){
             return currencyInDatabase.get();
@@ -45,27 +45,26 @@ public class CurrencyConverter {
         return currencyRepository.findCurrency(codeOfCurrency);
     }
 
-    private Currency findCurrencyInNbpBase(String codeOfCurrency) throws IOException, InterruptedException {
-        String tableA = nbpBase.callApiA();
-        Optional<CurrencyExchangeRate> exchangeRate = nbpBase.getCurrencyExchangeRateTable(tableA)
-                .stream()
-                .flatMap(rateList -> rateList.getRates().stream())
-                .filter(x -> x.getCode().equalsIgnoreCase(codeOfCurrency))
-                .findFirst();
-        if (exchangeRate.isEmpty()){
-            String tableB = nbpBase.callApiB();
-            exchangeRate = nbpBase.getCurrencyExchangeRateTable(tableB)
+    private Currency findCurrencyInNbpBase(String codeOfCurrency) {
+        Optional<CurrencyExchangeRate> currencyExchangeRate =
+                getCurrencyExchangeRate(nbpRepository.callApiA(), codeOfCurrency);
+        if (currencyExchangeRate.isEmpty()){
+            currencyExchangeRate = getCurrencyExchangeRate(nbpRepository.callApiB(), codeOfCurrency);
+        }
+        if (currencyExchangeRate.isPresent()){
+            CurrencyExchangeRate rate = currencyExchangeRate.get();
+            return new Currency(rate.getCode(), rate.getCurrency(), rate.getMid());
+        }
+        throw new NbpApiException("Currency not found!");
+    }
+
+    private Optional<CurrencyExchangeRate> getCurrencyExchangeRate(String nbpTable, String codeOfCurrency) {
+        return nbpRepository.getCurrencyExchangeRateTable(nbpTable)
                     .stream()
                     .flatMap(rateList -> rateList.getRates().stream())
                     .filter(x -> x.getCode().equalsIgnoreCase(codeOfCurrency))
                     .findFirst();
-        }
-        if (exchangeRate.isPresent()){
-            CurrencyExchangeRate currencyExchangeRate = exchangeRate.get();
-            return new Currency(currencyExchangeRate.getCode(),
-                    currencyExchangeRate.getCurrency(), currencyExchangeRate.getMid());
-        }
-        throw new RuntimeException("Currency not found!");
     }
+
 
 }
