@@ -1,3 +1,5 @@
+package nbp;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -32,9 +34,12 @@ public class NbpApi {
         return callApi(table_b);
     }
 
-    public List<CurrencyExchangeRateList> getCurrencyExchangeRateTable(String jsonFile) throws JsonProcessingException {
+    public List<CurrencyExchangeRateList> getCurrencyExchangeRateTable(String jsonFile)
+            throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(jsonFile, new TypeReference<List<CurrencyExchangeRateList>>(){});
     }
+
+
 
 }
