@@ -5,10 +5,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class NbpApi {
 
@@ -40,16 +36,5 @@ public class NbpApi {
             throw new NbpApiException("Calling NBP API table B failed", e.getCause());
         }
     }
-
-    public List<CurrencyExchangeRateList> getCurrencyExchangeRateTable(String jsonFile) {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            return mapper.readValue(jsonFile, new TypeReference<List<CurrencyExchangeRateList>>(){});
-        } catch (Exception e) {
-            throw new NbpApiException("Processing JSON file failed", e.getCause());
-        }
-    }
-
-
 
 }

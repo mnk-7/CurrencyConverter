@@ -2,9 +2,7 @@ package converter;
 
 import db.Currency;
 import db.CurrencyRepository;
-import nbp.CurrencyExchangeRate;
-import nbp.NbpApi;
-import nbp.NbpApiException;
+import nbp.NbpApiRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -13,12 +11,13 @@ import java.util.Optional;
 public class CurrencyConverter {
 
     private final CurrencyRepository currencyRepository;
-    private final NbpApi nbpRepository;
+    private final NbpApiRepository nbpRepository;
 
-    public CurrencyConverter(CurrencyRepository currencyRepository, NbpApi nbpRepository) {
+    public CurrencyConverter(CurrencyRepository currencyRepository, NbpApiRepository nbpRepository) {
         this.currencyRepository = currencyRepository;
         this.nbpRepository = nbpRepository;
     }
+
 
     public BigDecimal convertToPln(String codeOfCurrencyToConvert, BigDecimal amountToConvert) {
         Currency currencyToConvert = findCurrency(codeOfCurrencyToConvert);
@@ -35,36 +34,24 @@ public class CurrencyConverter {
         Optional<Currency> currencyInDatabase = findCurrencyInDatabase(codeOfCurrency);
         if (currencyInDatabase.isPresent()){
             return currencyInDatabase.get();
+        } else {
+            Currency currencyInNbpBase = findCurrencyInNbpBase(codeOfCurrency);
+            addNewCurrencyToDatabase(currencyInNbpBase);
+            return currencyInNbpBase;
         }
-        Currency currencyInNbpBase = findCurrencyInNbpBase(codeOfCurrency);
-        currencyRepository.addCurrency(currencyInNbpBase);
-        return currencyInNbpBase;
     }
+
 
     private Optional<Currency> findCurrencyInDatabase(String codeOfCurrency){
         return currencyRepository.findCurrency(codeOfCurrency);
     }
 
     private Currency findCurrencyInNbpBase(String codeOfCurrency) {
-        Optional<CurrencyExchangeRate> currencyExchangeRate =
-                getCurrencyExchangeRate(nbpRepository.callApiA(), codeOfCurrency);
-        if (currencyExchangeRate.isEmpty()){
-            currencyExchangeRate = getCurrencyExchangeRate(nbpRepository.callApiB(), codeOfCurrency);
-        }
-        if (currencyExchangeRate.isPresent()){
-            CurrencyExchangeRate rate = currencyExchangeRate.get();
-            return new Currency(rate.getCode(), rate.getCurrency(), rate.getMid());
-        }
-        throw new NbpApiException("Currency not found!");
+        return nbpRepository.findCurrency(codeOfCurrency);
     }
 
-    private Optional<CurrencyExchangeRate> getCurrencyExchangeRate(String nbpTable, String codeOfCurrency) {
-        return nbpRepository.getCurrencyExchangeRateTable(nbpTable)
-                    .stream()
-                    .flatMap(rateList -> rateList.getRates().stream())
-                    .filter(x -> x.getCode().equalsIgnoreCase(codeOfCurrency))
-                    .findFirst();
+    private void addNewCurrencyToDatabase(Currency newCurrency){
+        currencyRepository.addCurrency(newCurrency);
     }
-
 
 }
