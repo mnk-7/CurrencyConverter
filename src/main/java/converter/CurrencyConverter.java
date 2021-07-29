@@ -2,6 +2,7 @@ package converter;
 
 import db.Currency;
 import db.CurrencyRepository;
+import nbp.NbpApiException;
 import nbp.NbpApiRepository;
 
 import java.math.BigDecimal;
@@ -16,6 +17,25 @@ public class CurrencyConverter {
     public CurrencyConverter(CurrencyRepository currencyRepository, NbpApiRepository nbpRepository) {
         this.currencyRepository = currencyRepository;
         this.nbpRepository = nbpRepository;
+    }
+
+
+    public BigDecimal convert(String codeFrom, String codeTo, BigDecimal amountToConvert){
+        if (codeFrom.equals("PLN")){
+            return convertFromPln(codeTo,amountToConvert);
+        } else if (codeTo.equals("PLN")){
+            return convertToPln(codeFrom, amountToConvert);
+        } else{
+            return convertOtherCurrencies(codeFrom,codeTo,amountToConvert);
+        }
+    }
+
+    private BigDecimal convertOtherCurrencies(String codeFrom, String codeTo, BigDecimal amountToConvert){
+        Currency currencyFromToConvert = findCurrency(codeFrom);
+        Currency currencyToToConvert = findCurrency(codeTo);
+        return amountToConvert
+                .multiply(currencyFromToConvert.getAvgRate())
+                .divide(currencyToToConvert.getAvgRate(), 2, RoundingMode.HALF_UP);
     }
 
 
@@ -35,9 +55,13 @@ public class CurrencyConverter {
         if (currencyInDatabase.isPresent()){
             return currencyInDatabase.get();
         } else {
-            Currency currencyInNbpBase = findCurrencyInNbpBase(codeOfCurrency);
-            addNewCurrencyToDatabase(currencyInNbpBase);
-            return currencyInNbpBase;
+            Optional<Currency> currencyInNbpBase = findCurrencyInNbpBase(codeOfCurrency);
+            if (currencyInNbpBase.isPresent()){
+                addNewCurrencyToDatabase(currencyInNbpBase.get());
+                return currencyInNbpBase.get();
+            } else {
+                throw new NbpApiException("Currency not found");
+            }
         }
     }
 
@@ -46,7 +70,7 @@ public class CurrencyConverter {
         return currencyRepository.findCurrency(codeOfCurrency);
     }
 
-    private Currency findCurrencyInNbpBase(String codeOfCurrency) {
+    private Optional<Currency> findCurrencyInNbpBase(String codeOfCurrency) {
         return nbpRepository.findCurrency(codeOfCurrency);
     }
 

@@ -26,5 +26,10 @@ public class MainTest {
         System.out.println(currencyConverter.convertToPln("USD", new BigDecimal("20")));
         System.out.println(currencyConverter.convertFromPln("BAM", new BigDecimal("20")));
         //currencyConverter.convertFromPln("ABC", new BigDecimal(10));
+
+        System.out.println(currencyRepository.findAllCurrencies());
+
+        System.out.println(currencyConverter.convert("PLN", "USD", new BigDecimal(500)));
+        System.out.println(currencyConverter.convert("EUR", "USD", new BigDecimal(100)));
     }
 }

@@ -15,13 +15,10 @@ public class NbpApiRepository {
         this.nbpApi = nbpApi;
     }
 
-    public Currency findCurrency(String codeOfCurrency) {
-        Optional<CurrencyExchangeRate> currencyExchangeRate =
-                getCurrencyExchangeRate(nbpApi.callApiA(), codeOfCurrency);
-        if (currencyExchangeRate.isEmpty()){
-            currencyExchangeRate = getCurrencyExchangeRate(nbpApi.callApiB(), codeOfCurrency);
-        }
-        return convertCurrencyExchangeRateToCurrency(currencyExchangeRate);
+    public Optional<Currency> findCurrency(String codeOfCurrency) {
+        return getCurrencyExchangeRate(nbpApi.callApiA(), codeOfCurrency)
+                        .or(() -> getCurrencyExchangeRate(nbpApi.callApiB(), codeOfCurrency))
+                        .map(x -> convertCurrencyExchangeRateToCurrency(x));
     }
 
     private Optional<CurrencyExchangeRate> getCurrencyExchangeRate(String nbpTable, String codeOfCurrency) {
@@ -41,12 +38,9 @@ public class NbpApiRepository {
         }
     }
 
-    private Currency convertCurrencyExchangeRateToCurrency(Optional<CurrencyExchangeRate> currencyExchangeRate){
-        if (currencyExchangeRate.isPresent()){
-            CurrencyExchangeRate rate = currencyExchangeRate.get();
+    private Currency convertCurrencyExchangeRateToCurrency(CurrencyExchangeRate rate){
             return new Currency(rate.getCode(), rate.getCurrency(), rate.getMid());
-        }
-        throw new NbpApiException("Currency code not found!");
     }
 
 }
+
